@@ -1,80 +1,127 @@
 import 'package:flutter/material.dart';
 import 'package:couldai_user_app/theme/app_theme.dart';
-import 'package:couldai_user_app/screens/match_selection_screen.dart';
 import 'package:couldai_user_app/screens/success_screen.dart';
 
 class SummaryScreen extends StatelessWidget {
-  final List<Match> matches;
+  final Map<String, String> predictions;
 
-  const SummaryScreen({Key? key, required this.matches}) : super(key: key);
+  const SummaryScreen({Key? key, required this.predictions}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    bool isComplete = matches.every((m) => m.selectedScore != null);
+    // Check if we have 6 predictions
+    bool isComplete = predictions.length == 6;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Review Predictions'),
+        title: const Text('Revisar Palpites'),
       ),
       body: Column(
         children: [
-          _buildSummaryHeader(context, isComplete),
+          _buildHeader(context, isComplete),
           Expanded(
             child: ListView.builder(
-              padding: const EdgeInsets.only(bottom: 100),
-              itemCount: matches.length,
+              padding: const EdgeInsets.all(16),
+              itemCount: 6, // Mocking the 6 matches again for the summary
               itemBuilder: (context, index) {
-                return _buildSummaryCard(context, matches[index], index + 1);
+                String matchId = (index + 1).toString();
+                String score = predictions[matchId] ?? '--';
+                return _buildSummaryCard(context, matchId, score);
               },
             ),
           ),
+          _buildFooter(context, isComplete),
         ],
       ),
-      floatingActionButton: isComplete
-          ? FloatingActionButton.extended(
-              onPressed: () {
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (context) => const SuccessScreen()),
-                  (route) => false,
-                );
-              },
-              label: const Text('Submit Predictions', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-              icon: const Icon(Icons.send, color: Colors.black),
-              backgroundColor: AppTheme.primaryColor,
-            )
-          : null,
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 
-  Widget _buildSummaryHeader(BuildContext context, bool isComplete) {
+  Widget _buildHeader(BuildContext context, bool isComplete) {
     return Container(
       padding: const EdgeInsets.all(24),
       color: AppTheme.cardColor,
-      child: Row(
+      width: double.infinity,
+      child: Column(
         children: [
           Icon(
-            isComplete ? Icons.check_circle : Icons.warning_amber_rounded,
+            isComplete ? Icons.check_circle_outline : Icons.info_outline,
             color: isComplete ? AppTheme.primaryColor : Colors.orange,
-            size: 32,
+            size: 48,
           ),
-          const SizedBox(width: 16),
+          const SizedBox(height: 16),
+          Text(
+            isComplete ? 'Tudo pronto!' : 'Palpites Incompletos',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  color: isComplete ? AppTheme.primaryColor : Colors.white,
+                ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            isComplete
+                ? 'Revise seus palpites e envie abaixo.'
+                : 'Por favor, complete todos os palpites para enviar.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppTheme.textSecondaryColor,
+                ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryCard(BuildContext context, String matchId, String score) {
+    // Quick mock of match teams corresponding to IDs
+    final Map<String, List<String>> mockTeams = {
+      '1': ['Brasil', 'Argentina'],
+      '2': ['Flamengo', 'Palmeiras'],
+      '3': ['Real Madrid', 'Barcelona'],
+      '4': ['Man City', 'Arsenal'],
+      '5': ['Bayern', 'Dortmund'],
+      '6': ['Boca Juniors', 'River Plate'],
+    };
+
+    final teams = mockTeams[matchId] ?? ['Time A', 'Time B'];
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.cardColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.primaryColor.withOpacity(0.2)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  isComplete ? 'All set!' : 'Incomplete Predictions',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  isComplete
-                      ? 'Review your picks and submit below.'
-                      : 'Please complete all match predictions to submit.',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-              ],
+            child: Text(
+              teams[0],
+              style: const TextStyle(fontWeight: FontWeight.bold),
+              textAlign: TextAlign.right,
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: AppTheme.backgroundColor,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              score,
+              style: TextStyle(
+                color: score == '--' ? Colors.grey : AppTheme.primaryColor,
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              teams[1],
+              style: const TextStyle(fontWeight: FontWeight.bold),
+              textAlign: TextAlign.left,
             ),
           ),
         ],
@@ -82,76 +129,33 @@ class SummaryScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSummaryCard(BuildContext context, Match match, int matchNumber) {
-    bool hasPrediction = match.selectedScore != null;
-
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: hasPrediction ? Colors.transparent : Colors.red.withOpacity(0.5),
-          width: 1,
-        ),
+  Widget _buildFooter(BuildContext context, bool isComplete) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppTheme.backgroundColor,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.5),
+            offset: const Offset(0, -4),
+            blurRadius: 8,
+          ),
+        ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: hasPrediction ? AppTheme.primaryColor.withOpacity(0.2) : Colors.red.withOpacity(0.2),
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Text(
-                  '\$matchNumber',
-                  style: TextStyle(
-                    color: hasPrediction ? AppTheme.primaryColor : Colors.red,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '\${match.homeTeam} vs \${match.awayTeam}',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    match.dateTime,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 16),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: hasPrediction ? AppTheme.primaryColor : AppTheme.backgroundColor,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: hasPrediction ? AppTheme.primaryColor : Colors.grey.shade700,
-                ),
-              ),
-              child: Text(
-                hasPrediction ? match.selectedScore! : '?',
-                style: TextStyle(
-                  color: hasPrediction ? Colors.black : Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
-              ),
-            ),
-          ],
+      child: SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: isComplete
+              ? () {
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(
+                      builder: (context) => const SuccessScreen(),
+                    ),
+                    (route) => false,
+                  );
+                }
+              : null,
+          child: const Text('ENVIAR PALPITES'),
         ),
       ),
     );

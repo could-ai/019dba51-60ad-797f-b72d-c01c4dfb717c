@@ -8,15 +8,8 @@ class Match {
   final String homeTeam;
   final String awayTeam;
   final String dateTime;
-  String? selectedScore;
 
-  Match({
-    required this.id,
-    required this.homeTeam,
-    required this.awayTeam,
-    required this.dateTime,
-    this.selectedScore,
-  });
+  Match({required this.id, required this.homeTeam, required this.awayTeam, required this.dateTime});
 }
 
 class MatchSelectionScreen extends StatefulWidget {
@@ -27,56 +20,48 @@ class MatchSelectionScreen extends StatefulWidget {
 }
 
 class _MatchSelectionScreenState extends State<MatchSelectionScreen> {
+  // Mock matches for the prototype
   final List<Match> matches = [
-    Match(id: '1', homeTeam: 'Brazil', awayTeam: 'Argentina', dateTime: 'Oct 25, 20:00'),
-    Match(id: '2', homeTeam: 'Flamengo', awayTeam: 'Palmeiras', dateTime: 'Oct 26, 16:00'),
-    Match(id: '3', homeTeam: 'Real Madrid', awayTeam: 'Barcelona', dateTime: 'Oct 26, 21:00'),
-    Match(id: '4', homeTeam: 'Man City', awayTeam: 'Arsenal', dateTime: 'Oct 27, 14:00'),
-    Match(id: '5', homeTeam: 'Bayern', awayTeam: 'Dortmund', dateTime: 'Oct 27, 18:30'),
-    Match(id: '6', homeTeam: 'Boca Juniors', awayTeam: 'River Plate', dateTime: 'Oct 28, 19:00'),
+    Match(id: '1', homeTeam: 'Brasil', awayTeam: 'Argentina', dateTime: '25 Out, 20:00'),
+    Match(id: '2', homeTeam: 'Flamengo', awayTeam: 'Palmeiras', dateTime: '26 Out, 16:00'),
+    Match(id: '3', homeTeam: 'Real Madrid', awayTeam: 'Barcelona', dateTime: '26 Out, 21:00'),
+    Match(id: '4', homeTeam: 'Man City', awayTeam: 'Arsenal', dateTime: '27 Out, 14:00'),
+    Match(id: '5', homeTeam: 'Bayern', awayTeam: 'Dortmund', dateTime: '27 Out, 18:30'),
+    Match(id: '6', homeTeam: 'Boca Juniors', awayTeam: 'River Plate', dateTime: '28 Out, 19:00'),
   ];
 
-  final List<String> commonScores = ['0-0', '1-0', '0-1', '1-1', '2-1', '1-2'];
+  // Store selected scores: matchId -> score string (e.g., '2-1')
+  final Map<String, String> predictions = {};
+
+  // Common quick scores to display
+  final List<String> quickScores = ['1-0', '2-0', '2-1', '0-0', '1-1', '0-1', '0-2', '1-2'];
 
   @override
   Widget build(BuildContext context) {
-    int completedPicks = matches.where((m) => m.selectedScore != null).length;
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Super 6 Predictions'),
+        title: const Text('Palpites Super 6'),
       ),
       body: Column(
         children: [
-          _buildProgressHeader(completedPicks),
+          _buildProgressHeader(),
           Expanded(
             child: ListView.builder(
-              padding: const EdgeInsets.only(bottom: 100), // Space for floating button
+              padding: const EdgeInsets.all(16),
               itemCount: matches.length,
               itemBuilder: (context, index) {
                 return _buildMatchCard(matches[index], index + 1);
               },
             ),
           ),
+          _buildFooter(context),
         ],
       ),
-      floatingActionButton: completedPicks == 6
-          ? FloatingActionButton.extended(
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (context) => SummaryScreen(matches: matches)),
-                );
-              },
-              label: const Text('Review Predictions', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-              icon: const Icon(Icons.check, color: Colors.black),
-              backgroundColor: AppTheme.primaryColor,
-            )
-          : null,
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 
-  Widget _buildProgressHeader(int completedPicks) {
+  Widget _buildProgressHeader() {
+    int predictedCount = predictions.length;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       color: AppTheme.cardColor,
@@ -84,23 +69,15 @@ class _MatchSelectionScreenState extends State<MatchSelectionScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            'Your Picks',
+            'Seus Palpites',
             style: Theme.of(context).textTheme.titleMedium,
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: completedPicks == 6 ? AppTheme.primaryColor : Colors.transparent,
-              border: Border.all(color: AppTheme.primaryColor),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              '\$completedPicks / 6',
-              style: TextStyle(
-                color: completedPicks == 6 ? Colors.black : AppTheme.primaryColor,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+          Text(
+            '$predictedCount / 6',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: predictedCount == 6 ? AppTheme.primaryColor : Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
           ),
         ],
       ),
@@ -108,132 +85,178 @@ class _MatchSelectionScreenState extends State<MatchSelectionScreen> {
   }
 
   Widget _buildMatchCard(Match match, int matchNumber) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Match \$matchNumber',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppTheme.primaryColor),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.cardColor,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Jogo $matchNumber',
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: AppTheme.primaryColor,
+                    ),
+              ),
+              Text(
+                match.dateTime,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppTheme.textSecondaryColor,
+                    ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  match.homeTeam,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.right,
                 ),
-                Text(
-                  match.dateTime,
-                  style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  'vs',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppTheme.textSecondaryColor),
                 ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                Expanded(
-                  child: Text(
-                    match.homeTeam,
-                    textAlign: TextAlign.right,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
+              ),
+              Expanded(
+                child: Text(
+                  match.awayTeam,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.left,
                 ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16),
-                  child: Text('vs', style: TextStyle(color: Colors.grey)),
-                ),
-                Expanded(
-                  child: Text(
-                    match.awayTeam,
-                    textAlign: TextAlign.left,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              alignment: WrapAlignment.center,
-              children: [
-                ...commonScores.map((score) => _buildScoreButton(match, score)),
-                _buildOtherButton(match),
-              ],
-            ),
-          ],
-        ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          _buildScoreGrid(match),
+        ],
       ),
     );
   }
 
-  Widget _buildScoreButton(Match match, String score) {
-    bool isSelected = match.selectedScore == score;
+  Widget _buildScoreGrid(Match match) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      alignment: WrapAlignment.center,
+      children: [
+        ...quickScores.map((score) => _buildScoreOption(match.id, score)),
+        _buildOtherOption(match),
+      ],
+    );
+  }
+
+  Widget _buildScoreOption(String matchId, String score) {
+    bool isSelected = predictions[matchId] == score;
     return GestureDetector(
       onTap: () {
         setState(() {
-          match.selectedScore = score;
+          predictions[matchId] = score;
         });
       },
       child: Container(
         width: 60,
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        height: 40,
         decoration: BoxDecoration(
-          color: isSelected ? AppTheme.primaryColor : AppTheme.backgroundColor,
+          color: isSelected ? AppTheme.primaryColor : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isSelected ? AppTheme.primaryColor : Colors.grey.shade800,
+            color: isSelected ? AppTheme.primaryColor : AppTheme.textSecondaryColor.withOpacity(0.3),
           ),
         ),
-        child: Center(
-          child: Text(
-            score,
-            style: TextStyle(
-              color: isSelected ? Colors.black : Colors.white,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            ),
+        alignment: Alignment.center,
+        child: Text(
+          score,
+          style: TextStyle(
+            color: isSelected ? Colors.black : Colors.white,
+            fontWeight: FontWeight.bold,
           ),
         ),
       ),
     );
   }
 
-  Widget _buildOtherButton(Match match) {
-    bool isOtherSelected = match.selectedScore != null && !commonScores.contains(match.selectedScore);
+  Widget _buildOtherOption(Match match) {
+    // If the prediction is not in the quick scores, show it here as selected.
+    bool hasCustomScore = predictions[match.id] != null && !quickScores.contains(predictions[match.id]);
     
     return GestureDetector(
       onTap: () async {
-        final result = await Navigator.of(context).push(
+        // Navigate to detailed screen
+        final result = await Navigator.of(context).push<String>(
           MaterialPageRoute(
-            builder: (context) => DetailedPredictionScreen(match: match),
+            builder: (context) => DetailedPredictionScreen(
+              matchHome: match.homeTeam,
+              matchAway: match.awayTeam,
+              initialScore: predictions[match.id],
+            ),
           ),
         );
+
         if (result != null) {
           setState(() {
-            match.selectedScore = result;
+            predictions[match.id] = result;
           });
         }
       },
       child: Container(
-        width: 80,
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        height: 40,
         decoration: BoxDecoration(
-          color: isOtherSelected ? AppTheme.primaryColor : AppTheme.backgroundColor,
+          color: hasCustomScore ? AppTheme.primaryColor : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isOtherSelected ? AppTheme.primaryColor : Colors.grey.shade800,
+            color: hasCustomScore ? AppTheme.primaryColor : AppTheme.textSecondaryColor.withOpacity(0.3),
           ),
         ),
-        child: Center(
-          child: Text(
-            isOtherSelected ? match.selectedScore! : 'Other',
-            style: TextStyle(
-              color: isOtherSelected ? Colors.black : Colors.white,
-              fontWeight: isOtherSelected ? FontWeight.bold : FontWeight.normal,
-            ),
+        alignment: Alignment.center,
+        child: Text(
+          hasCustomScore ? predictions[match.id]! : 'Outro',
+          style: TextStyle(
+            color: hasCustomScore ? Colors.black : Colors.white,
+            fontWeight: FontWeight.bold,
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildFooter(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppTheme.backgroundColor,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.5),
+            offset: const Offset(0, -4),
+            blurRadius: 8,
+          ),
+        ],
+      ),
+      child: ElevatedButton(
+        onPressed: predictions.length == 6
+            ? () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => SummaryScreen(predictions: predictions),
+                  ),
+                );
+              }
+            : null,
+        child: const Text('REVISAR PALPITES'),
       ),
     );
   }

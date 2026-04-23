@@ -1,108 +1,70 @@
 import 'package:flutter/material.dart';
 import 'package:couldai_user_app/theme/app_theme.dart';
-import 'package:couldai_user_app/screens/match_selection_screen.dart';
 
 class DetailedPredictionScreen extends StatefulWidget {
-  final Match match;
+  final String matchHome;
+  final String matchAway;
+  final String? initialScore;
 
-  const DetailedPredictionScreen({Key? key, required this.match}) : super(key: key);
+  const DetailedPredictionScreen({
+    Key? key,
+    required this.matchHome,
+    required this.matchAway,
+    this.initialScore,
+  }) : super(key: key);
 
   @override
   State<DetailedPredictionScreen> createState() => _DetailedPredictionScreenState();
 }
 
 class _DetailedPredictionScreenState extends State<DetailedPredictionScreen> {
-  String? selectedScore;
-  String? selectedScorer;
-  String? selectedTime;
+  int homeScore = 0;
+  int awayScore = 0;
+  String? firstGoalScorer;
+  String? firstGoalTime;
 
   @override
   void initState() {
     super.initState();
-    selectedScore = widget.match.selectedScore;
+    if (widget.initialScore != null) {
+      final parts = widget.initialScore!.split('-');
+      if (parts.length == 2) {
+        homeScore = int.tryParse(parts[0]) ?? 0;
+        awayScore = int.tryParse(parts[1]) ?? 0;
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Detailed Prediction'),
+        title: const Text('Palpite Detalhado'),
       ),
       body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildMatchHeader(),
-              const SizedBox(height: 32),
-              Text('Exact Score', style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 16),
-              _buildScoreGrid(),
-              const SizedBox(height: 32),
-              Text('Extra Questions (Optional)', style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 16),
-              _buildDropdownQuestion(
-                'First Goal Scorer',
-                ['Any Player', 'No Goalscorer', 'Striker A', 'Striker B', 'Midfielder C'],
-                selectedScorer,
-                (val) => setState(() => selectedScorer = val),
-              ),
-              const SizedBox(height: 16),
-              _buildDropdownQuestion(
-                'Time of First Goal',
-                ['0-15 min', '16-30 min', '31-45 min', '46-60 min', '61-75 min', '76-90 min', 'No Goal'],
-                selectedTime,
-                (val) => setState(() => selectedTime = val),
-              ),
-              const SizedBox(height: 48),
-              ElevatedButton(
-                onPressed: selectedScore != null
-                    ? () {
-                        Navigator.of(context).pop(selectedScore);
-                      }
-                    : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: selectedScore != null ? AppTheme.primaryColor : Colors.grey.shade800,
-                ),
-                child: Text(
-                  'Confirm Selection',
-                  style: TextStyle(
-                    color: selectedScore != null ? Colors.black : Colors.grey.shade500,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMatchHeader() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Expanded(
-              child: Text(
-                widget.match.homeTeam,
-                textAlign: TextAlign.right,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
+            _buildScoreSelector(),
+            const SizedBox(height: 32),
+            const Divider(color: AppTheme.cardColor, thickness: 2),
+            const SizedBox(height: 24),
+            Text(
+              'Perguntas Extras (Opcional)',
+              style: Theme.of(context).textTheme.titleLarge,
             ),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: Text('vs', style: TextStyle(color: Colors.grey)),
-            ),
-            Expanded(
-              child: Text(
-                widget.match.awayTeam,
-                textAlign: TextAlign.left,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
+            const SizedBox(height: 16),
+            _buildFirstGoalScorer(),
+            const SizedBox(height: 24),
+            _buildFirstGoalTime(),
+            const SizedBox(height: 48),
+            ElevatedButton(
+              onPressed: () {
+                // Return exact score string
+                Navigator.of(context).pop('\$homeScore-\$awayScore');
+              },
+              child: const Text('CONFIRMAR SELEÇÃO'),
             ),
           ],
         ),
@@ -110,84 +72,161 @@ class _DetailedPredictionScreenState extends State<DetailedPredictionScreen> {
     );
   }
 
-  Widget _buildScoreGrid() {
-    List<String> allScores = [];
-    for (int i = 0; i <= 4; i++) {
-      for (int j = 0; j <= 4; j++) {
-        allScores.add('\$i-\$j');
-      }
-    }
-
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 5,
-        childAspectRatio: 1.2,
-        crossAxisSpacing: 8,
-        mainAxisSpacing: 8,
+  Widget _buildScoreSelector() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppTheme.cardColor,
+        borderRadius: BorderRadius.circular(16),
       ),
-      itemCount: allScores.length,
-      itemBuilder: (context, index) {
-        String score = allScores[index];
-        bool isSelected = selectedScore == score;
-        return GestureDetector(
-          onTap: () {
-            setState(() {
-              selectedScore = score;
-            });
-          },
-          child: Container(
-            decoration: BoxDecoration(
-              color: isSelected ? AppTheme.primaryColor : AppTheme.backgroundColor,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: isSelected ? AppTheme.primaryColor : Colors.grey.shade800,
-              ),
-            ),
-            child: Center(
-              child: Text(
-                score,
-                style: TextStyle(
-                  color: isSelected ? Colors.black : Colors.white,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                ),
-              ),
-            ),
+      child: Column(
+        children: [
+          Text(
+            'Placar Exato',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppTheme.primaryColor),
           ),
-        );
-      },
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildTeamScoreControl(widget.matchHome, homeScore, (newScore) {
+                setState(() {
+                  homeScore = newScore;
+                });
+              }),
+              Text('X', style: Theme.of(context).textTheme.headlineMedium),
+              _buildTeamScoreControl(widget.matchAway, awayScore, (newScore) {
+                setState(() {
+                  awayScore = newScore;
+                });
+              }),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildDropdownQuestion(String label, List<String> options, String? currentValue, ValueChanged<String?> onChanged) {
+  Widget _buildTeamScoreControl(String teamName, int score, Function(int) onChanged) {
+    return Column(
+      children: [
+        Text(
+          teamName,
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            IconButton(
+              icon: const Icon(Icons.remove_circle_outline),
+              color: Colors.white,
+              onSize: 32,
+              onPressed: score > 0 ? () => onChanged(score - 1) : null,
+            ),
+            Container(
+              width: 48,
+              height: 48,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: AppTheme.backgroundColor,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppTheme.primaryColor),
+              ),
+              child: Text(
+                score.toString(),
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      color: AppTheme.primaryColor,
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.add_circle_outline),
+              color: AppTheme.primaryColor,
+              onPressed: () => onChanged(score + 1),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFirstGoalScorer() {
+    final List<String> options = ['Qualquer Jogador', 'Sem Gols', 'Atacante A', 'Atacante B', 'Meio-campista C'];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 8),
+        Text(
+          'Primeiro Jogador a Marcar',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
             color: AppTheme.cardColor,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.grey.shade800),
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
               isExpanded: true,
-              value: currentValue,
-              hint: const Text('Select an option'),
               dropdownColor: AppTheme.cardColor,
+              value: firstGoalScorer,
+              hint: const Text('Selecione uma opção', style: TextStyle(color: AppTheme.textSecondaryColor)),
               items: options.map((String value) {
                 return DropdownMenuItem<String>(
                   value: value,
                   child: Text(value),
                 );
               }).toList(),
-              onChanged: onChanged,
+              onChanged: (newValue) {
+                setState(() {
+                  firstGoalScorer = newValue;
+                });
+              },
             ),
           ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFirstGoalTime() {
+    final List<String> options = [
+      '0-15 min',
+      '16-30 min',
+      '31-45 min',
+      '46-60 min',
+      '61-75 min',
+      '76-90 min',
+      'Sem Gols'
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Momento do Primeiro Gol',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: options.map((option) {
+            bool isSelected = firstGoalTime == option;
+            return ChoiceChip(
+              label: Text(option),
+              selected: isSelected,
+              selectedColor: AppTheme.primaryColor,
+              backgroundColor: AppTheme.cardColor,
+              labelStyle: TextStyle(color: isSelected ? Colors.black : Colors.white),
+              onSelected: (selected) {
+                setState(() {
+                  firstGoalTime = selected ? option : null;
+                });
+              },
+            );
+          }).toList(),
         ),
       ],
     );

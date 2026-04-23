@@ -9,62 +9,81 @@ class CampaignScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildHeader(context),
-              const SizedBox(height: 24),
-              const Center(child: CountdownTimerWidget()),
-              const SizedBox(height: 32),
-              _buildPrizeSection(context),
-              const SizedBox(height: 48),
-              _buildCTA(context),
-              const SizedBox(height: 32),
-            ],
-          ),
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _buildSportsBanner(context),
+            const SizedBox(height: 32),
+            _buildPrizeSection(context),
+            const SizedBox(height: 48),
+            _buildCTA(context),
+            const SizedBox(height: 32),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildSportsBanner(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppTheme.backgroundColor,
-            AppTheme.cardColor,
-          ],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
+      height: 300,
+      decoration: const BoxDecoration(
+        image: DecorationImage(
+          image: NetworkImage('https://images.unsplash.com/photo-1518605368461-1e1e11af2859?q=80&w=800&auto=format&fit=crop'),
+          fit: BoxFit.cover,
         ),
       ),
-      child: Column(
-        children: [
-          const SizedBox(height: 20),
-          Text(
-            'SUPER 6',
-            style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                  color: AppTheme.primaryColor,
-                  letterSpacing: 2.0,
-                  shadows: [
-                    Shadow(
-                      color: AppTheme.primaryColor.withOpacity(0.5),
-                      blurRadius: 10,
-                    ),
-                  ],
-                ),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Colors.transparent,
+              AppTheme.backgroundColor.withOpacity(0.8),
+              AppTheme.backgroundColor,
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
           ),
-          const SizedBox(height: 12),
-          Text(
-            'Predict 6 correct scores to win big!',
-            style: Theme.of(context).textTheme.titleMedium,
-            textAlign: TextAlign.center,
-          ),
-        ],
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Text(
+              'SUPER 6',
+              style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                    color: AppTheme.primaryColor,
+                    letterSpacing: 3.0,
+                    fontWeight: FontWeight.w900,
+                    fontStyle: FontStyle.italic,
+                    shadows: [
+                      Shadow(
+                        color: Colors.black.withOpacity(0.8),
+                        blurRadius: 10,
+                      ),
+                    ],
+                  ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Acerte o placar e concorra a prêmios',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                shadows: [
+                  Shadow(
+                    color: Colors.black.withOpacity(0.8),
+                    blurRadius: 4,
+                  ),
+                ],
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            const CountdownTimerWidget(),
+          ],
+        ),
       ),
     );
   }
@@ -76,19 +95,19 @@ class CampaignScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Prize Pool',
+            'Premiação',
             style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: 16),
-          _buildPrizeCard(context, '6 Correct', 'R\$ 1,000,000', isHighlight: true),
+          _buildPrizeCard(context, '6 Acertos', 'R\$ 1.000.000', isHighlight: true),
           const SizedBox(height: 12),
-          _buildPrizeCard(context, '5 Correct', 'R\$ 50,000'),
+          _buildPrizeCard(context, '5 Acertos', 'R\$ 50.000'),
           const SizedBox(height: 12),
-          _buildPrizeCard(context, '4 Correct', 'R\$ 20,000'),
+          _buildPrizeCard(context, '4 Acertos', 'R\$ 20.000'),
           const SizedBox(height: 12),
-          _buildPrizeCard(context, '3 Correct', 'R\$ 25 Free Bet'),
+          _buildPrizeCard(context, '3 Acertos', 'Aposta Grátis R\$ 25'),
           const SizedBox(height: 12),
-          _buildPrizeCard(context, '2 Correct', 'R\$ 10 Free Bet'),
+          _buildPrizeCard(context, '2 Acertos', 'Aposta Grátis R\$ 10'),
         ],
       ),
     );
@@ -144,7 +163,7 @@ class CampaignScreen extends StatelessWidget {
             MaterialPageRoute(builder: (context) => const MatchSelectionScreen()),
           );
         },
-        child: const Text('ENTER NOW'),
+        child: const Text('PARTICIPAR AGORA'),
       ),
     );
   }

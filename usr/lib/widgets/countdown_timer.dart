@@ -18,7 +18,7 @@ class CountdownTimerWidget extends StatelessWidget {
           Icon(Icons.timer_outlined, color: Theme.of(context).primaryColor),
           const SizedBox(width: 8),
           const Text(
-            'Ends in 2 days 3 hours',
+            'Termina em 2 dias e 3 horas',
             style: TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
